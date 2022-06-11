@@ -19,7 +19,7 @@ from datetime import date
 
 load_dotenv()
 JorgeMorales = os.getenv('JorgeMorales')
-Grupo_WT = os.getenv('WATERTANK')
+Grupo_WT = os.getenv('JorgeMorales')
 AngelI = os.getenv('AngelI')
 token_bot = os.getenv('api_token')
 
@@ -118,6 +118,10 @@ def retrieveWT():
 		return last_line
 
 
+def low_level_warning(level):
+	send_message(Grupo_WT,quote(f"Notificación de nivel crítico de cisterna: Nivel en {level}"),token_bot)
+	return
+
 
 while True:
 	control_number += 1
@@ -128,24 +132,29 @@ while True:
 		sys.exit()
 
 	#Ya tenemos el nivel de cisterna, se calculan las tendencias.
-	if past_WT > 0:
+	if past_WT == 0:
+		past_WT = actual_WT[2]
+		time.sleep(300)
+		continue
 	#here is the part where we compare values to exercise critical actions
 	#dependiendo del nivel y de las tendencias se hacen las notificaciones pertinentes.
-		if actual_WT[2] < 81:
-			#call critical function
-			send_message(Grupo_WT,quote(f"Notificación de nivel crítico de cisterna: Nivel en {actual_WT[2]}"),token_bot)
-		#get WT updates every 3 passes or 30 minutes
-		if(control_number % 6 == 0):
-			delta_WT =  actual_WT[2] - past_WT
-			if delta_WT <= -2:
-				min_left = actual_WT[2]/((past_WT-actual_WT[2])/10)
-				print(f"Nivel de cisterna en {actual_WT[2]}. Ha caido {delta_WT} cm en 10 minutos, se estiman { round(min_left/60,1)} hrs restantes hasta vacío")
-				send_message(Grupo_WT,quote(f"Nivel de cisterna en {actual_WT[2]}. Ha caido {delta_WT} cm en 10 minutos, se estiman { round(min_left/60,1)} hrs restantes hasta vacío"),token_bot)
-			else:
-				send_message(Grupo_WT,quote(f"Nivel de cisterna: {actual_WT[2]}. Hay {delta_WT} cm de diferencia vs ultima actualización. Updated: {actual_WT[0]} - {actual_WT[1]} "),token_bot)
-			#send_message(Grupo_WT,quote(f"Información actualizada por ultima vez en: {actual_WT[0]} a las {actual_WT[1]}"),token_bot)
-			
-
+	if actual_WT[2] < 100:
+		#call critical function
+		low_level_warning(actual_WT[2])
+		past_WT = actual_WT[2]
+		time.sleep(300)
+		continue
+	#get WT updates every 
+	if(control_number % 6 == 0):
+		delta_WT =  actual_WT[2] - past_WT
+		if delta_WT <= -2:
+			min_left = actual_WT[2]/((past_WT-actual_WT[2])/10)
+			print(f"Nivel de cisterna en {actual_WT[2]}. Ha caido {delta_WT} cm en 10 minutos, se estiman { round(min_left/60,1)} hrs restantes hasta vacío")
+			send_message(Grupo_WT,quote(f"Nivel de cisterna en {actual_WT[2]}. Ha caido {delta_WT} cm en 10 minutos, se estiman { round(min_left/60,1)} hrs restantes hasta vacío"),token_bot)
+		else:
+			send_message(Grupo_WT,quote(f"Nivel de cisterna: {actual_WT[2]}. Hay {delta_WT} cm de diferencia vs ultima actualización. Updated: {actual_WT[0]} - {actual_WT[1]} "),token_bot)
+		#send_message(Grupo_WT,quote(f"Información actualizada por ultima vez en: {actual_WT[0]} a las {actual_WT[1]}"),token_bot)
+	
 	past_WT = actual_WT[2]
 
-	time.sleep(600)
+	time.sleep(300)
