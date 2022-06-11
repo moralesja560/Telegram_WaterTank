@@ -2,6 +2,7 @@
 #developed by Ing. Jorge Morales, MBA.
 #Control and Automation Engineering Department
 
+from asyncio.proactor_events import _ProactorBaseWritePipeTransport
 from math import trunc
 import os
 import sys
@@ -76,7 +77,8 @@ def send_message(user_id, text,token):
 mis_docs = My_Documents(5)
 last_line = ""
 past_WT = 0
-control_number = 1
+control_number = 0
+delta_WT = 0
 
 def retrieveWT():
 	today = date.today()
@@ -119,9 +121,17 @@ def retrieveWT():
 
 
 def low_level_warning(level):
-	send_message(Grupo_WT,quote(f"Notificación de nivel crítico de cisterna: Nivel en {level}"),token_bot)
+	send_message(Grupo_WT,quote(f"Advertencia de nivel bajo de cisterna: Nivel en {level}"),token_bot)
+	return
+def regular_updates(fecha,hora,nivel):
+	send_message(Grupo_WT,quote(f"Nivel de agua en {nivel} cm. Ultima actualización: {fecha} a las {hora}"),token_bot)
 	return
 
+def delta_warning(delta_WT,past_level,actual_level):
+	min_left = actual_level/((past_level-actual_level)/20)
+	print(f"Nivel de cisterna en {actual_level}. Ha caido {delta_WT} cm en 20 minutos, se estiman { round(min_left/60,1)} hrs restantes hasta vacío")
+	send_message(Grupo_WT,quote(f"Nivel de cisterna en {actual_level}. Ha caido {delta_WT} cm en 20 minutos, se estiman { round(min_left/60,1)} hrs restantes hasta vacío"),token_bot)
+	return
 
 while True:
 	control_number += 1
@@ -130,31 +140,24 @@ while True:
 	actual_WT = retrieveWT()
 	if actual_WT == None:
 		sys.exit()
-
-	#Ya tenemos el nivel de cisterna, se calculan las tendencias.
+	
+	#If first run, fill the past_WT var with the actual value, this will serve to find the level slope
 	if past_WT == 0:
 		past_WT = actual_WT[2]
-		time.sleep(300)
-		continue
-	#here is the part where we compare values to exercise critical actions
-	#dependiendo del nivel y de las tendencias se hacen las notificaciones pertinentes.
-	if actual_WT[2] < 100:
-		#call critical function
-		low_level_warning(actual_WT[2])
-		past_WT = actual_WT[2]
-		time.sleep(300)
-		continue
-	#get WT updates every 
-	if(control_number % 6 == 0):
+	else:
 		delta_WT =  actual_WT[2] - past_WT
-		if delta_WT <= -2:
-			min_left = actual_WT[2]/((past_WT-actual_WT[2])/10)
-			print(f"Nivel de cisterna en {actual_WT[2]}. Ha caido {delta_WT} cm en 10 minutos, se estiman { round(min_left/60,1)} hrs restantes hasta vacío")
-			send_message(Grupo_WT,quote(f"Nivel de cisterna en {actual_WT[2]}. Ha caido {delta_WT} cm en 10 minutos, se estiman { round(min_left/60,1)} hrs restantes hasta vacío"),token_bot)
-		else:
-			send_message(Grupo_WT,quote(f"Nivel de cisterna: {actual_WT[2]}. Hay {delta_WT} cm de diferencia vs ultima actualización. Updated: {actual_WT[0]} - {actual_WT[1]} "),token_bot)
-		#send_message(Grupo_WT,quote(f"Información actualizada por ultima vez en: {actual_WT[0]} a las {actual_WT[1]}"),token_bot)
-	
-	past_WT = actual_WT[2]
-
-	time.sleep(300)
+	#here is the part where we compare values to exercise critical actions
+	if actual_WT[2] < 100 or delta_WT <=-4:
+		#call critical function
+		delta_warning(delta_WT,past_WT,actual_WT[2])
+		past_WT = actual_WT[2]
+		#when a low level warning is issued, wait 20 minutes before sending another warning message
+		time.sleep(1)
+		continue
+	#Regular updates every 3 hours.
+	if(control_number % 9 == 0):
+		regular_updates(actual_WT[0],actual_WT[1],actual_WT[2])
+		past_WT = actual_WT[2]
+		time.sleep(1)
+		continue
+	time.sleep(1)
