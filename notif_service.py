@@ -20,7 +20,7 @@ from datetime import date
 
 load_dotenv()
 JorgeMorales = os.getenv('JorgeMorales')
-Grupo_WT = os.getenv('JorgeMorales')
+Grupo_WT = os.getenv('WATERTANK')
 AngelI = os.getenv('AngelI')
 token_bot = os.getenv('api_token')
 
@@ -65,14 +65,6 @@ def send_message(user_id, text,token):
 
 
 
-
-
-
-################## end of the auxiliary functions
-#steps
-	#convert from HST to TXT
-	#recover the file using the filepath
-	#
 
 mis_docs = My_Documents(5)
 last_line = ""
@@ -120,9 +112,6 @@ def retrieveWT():
 		return last_line
 
 
-def low_level_warning(level):
-	send_message(Grupo_WT,quote(f"Advertencia de nivel bajo de cisterna: Nivel en {level}"),token_bot)
-	return
 def regular_updates(fecha,hora,nivel):
 	send_message(Grupo_WT,quote(f"Nivel de agua en {nivel} cm. Ultima actualización: {fecha} a las {hora}"),token_bot)
 	return
@@ -152,12 +141,12 @@ while True:
 		delta_warning(delta_WT,past_WT,actual_WT[2])
 		past_WT = actual_WT[2]
 		#when a low level warning is issued, wait 20 minutes before sending another warning message
-		time.sleep(1)
+		time.sleep(1200)
 		continue
 	#Regular updates every 3 hours.
 	if(control_number % 9 == 0):
 		regular_updates(actual_WT[0],actual_WT[1],actual_WT[2])
 		past_WT = actual_WT[2]
-		time.sleep(1)
+		time.sleep(1200)
 		continue
-	time.sleep(1)
+	time.sleep(1200)
