@@ -136,7 +136,7 @@ while True:
 	else:
 		delta_WT =  actual_WT[2] - past_WT
 	#here is the part where we compare values to exercise critical actions
-	if actual_WT[2] < 100 or delta_WT <=-4:
+	if actual_WT[2] < 100 or delta_WT <=-5:
 		#call critical function
 		delta_warning(delta_WT,past_WT,actual_WT[2])
 		past_WT = actual_WT[2]
