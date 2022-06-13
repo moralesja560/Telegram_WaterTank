@@ -1,3 +1,4 @@
+from functools import total_ordering
 import pandas as pd
 import sys
 import os
@@ -10,6 +11,7 @@ import os
 
 
 slope = {"FechaHora":[],"Slope":[]}
+WT_trending = {"Nivel":[],"UpLevel":[],"DownLevel":[],"ZeroLevel":[]}
 
 def resource_path(relative_path):
     """ Get absolute path to resource, works for dev and for PyInstaller """
@@ -27,23 +29,42 @@ Step1Data.to_csv(resource_path(r"images/filtered_data.csv"), encoding='utf-8')
 Step1_lastLevel = 10000
 Step1_UpLevel = 0
 Step1_DownLevel = 0
-for index,row in Step1Data.iterrows():
-	if row['Nivel OK'] == 100 and Step1_lastLevel == 10000:
-		Step1_lastLevel = 100
-		continue
-	if Step1_lastLevel == 100:
-		if row['Nivel OK'] > Step1_lastLevel:
-			Step1_UpLevel +=1
-		elif row['Nivel OK'] < Step1_lastLevel:
-			Step1_DownLevel +=1
-		Step1_lastLevel = 10000
-
-print(f"Cuando la cisterna toca 100cm, hay una posibilidad del {Step1_UpLevel/(Step1_DownLevel+Step1_UpLevel):.2%} de subir y {Step1_DownLevel/(Step1_DownLevel+Step1_UpLevel):.2%} de que baje")
+Step1_ZeroLevel = 0
 
 
 
 
+for i in range(1,210):
+	for index,row in Step1Data.iterrows():
+		#this for-loop looks for the level and then decides
+		if row['Nivel OK'] == i and Step1_lastLevel == 10000:
+			Step1_lastLevel = i
+			continue
+		if Step1_lastLevel == i:
+			if row['Nivel OK'] > Step1_lastLevel:
+				Step1_UpLevel +=1
+				Step1_lastLevel = 10000
+				continue
+			elif row['Nivel OK'] < Step1_lastLevel:
+				Step1_DownLevel +=1
+				Step1_lastLevel = 10000
+				continue
+			elif row['Nivel OK'] == Step1_lastLevel:
+				Step1_ZeroLevel +=1
+			Step1_lastLevel = 10000
+	if Step1_UpLevel+Step1_DownLevel+Step1_ZeroLevel > 0:
+		WT_trending["Nivel"].append(i)
+		WT_trending["UpLevel"].append(f"{Step1_UpLevel/(Step1_UpLevel+Step1_DownLevel+Step1_ZeroLevel):.2%}")
+		WT_trending["DownLevel"].append(f"{Step1_DownLevel/(Step1_UpLevel+Step1_DownLevel+Step1_ZeroLevel):.2%}")
+		WT_trending["ZeroLevel"].append(f"{Step1_ZeroLevel/(Step1_UpLevel+Step1_DownLevel+Step1_ZeroLevel):.2%}")
+	Step1_UpLevel = 0
+	Step1_DownLevel = 0
+	Step1_ZeroLevel = 0
+	Step1_lastLevel = 10000
 
+WT_trending_df = pd.DataFrame(WT_trending)
+
+WT_trending_df.to_csv(resource_path(r"images/trends.csv"), encoding='utf-8')
 
 lastLevel = 0
 newLevel = 0
@@ -129,15 +150,14 @@ for index, row in Step2_Data.iterrows():
 			zeroazero +=1
 	old_slope_data = slope_data
 
-print(f"El total de la información es de: {len(Step2_Data['Slope'])}. \nHay una probabilidad del {plusaplus/len(Step2_Data['Slope']):.2%} que un número positivo, siga a uno positivo")
-print(f"Hay una probabilidad del {negaplus/len(Step2_Data['Slope']):.2%} que un número negativo, siga a uno positivo")
-print(f"Hay una probabilidad del {zeroaplus/len(Step2_Data['Slope']):.2%} que un zero, siga a uno positivo")
-print(f"Hay una probabilidad del {plusaneg/len(Step2_Data['Slope']):.2%} que un número positivo siga a uno negativo")
-print(f"Hay una probabilidad del {neganeg/len(Step2_Data['Slope']):.2%} que un número negativo, siga a uno negativo")
-print(f"Hay una probabilidad del {zeroaneg/len(Step2_Data['Slope']):.2%} que un zero, siga a uno negativo")
-print(f"Hay una probabilidad del {plusazero/len(Step2_Data['Slope']):.2%} que un número positivo siga a zero")
-print(f"Hay una probabilidad del {negazero/len(Step2_Data['Slope']):.2%} que un número negativo, siga a un cero")
-print(f"Hay una probabilidad del {zeroazero/len(Step2_Data['Slope']):.2%} que un zero, siga a un zero")
+total_plus = plusaneg+plusaplus+plusazero
+total_neg = plusaneg + neganeg +zeroaneg
+total_zero = plusazero+negazero+zeroazero
+
+print(f"Despues de un número positivo, el {plusaplus/total_plus:.2%} de las veces, siguió un número positivo, el {negaplus/total_plus:.2%} fue un numero negativo y el {zeroaplus/total_plus:.2%} siguió un 0 ")
+print(f"Despues de un número negativo, el {plusaneg/total_neg:.2%} de las veces, siguió un número positivo, el {neganeg/total_neg:.2%} fue un numero negativo y el {zeroaneg/total_neg:.2%} siguió un 0 ")
+print(f"Despues de un cero, el {plusazero/total_zero:.2%} de las veces, siguió un número positivo, el {negazero/total_zero:.2%} fue un numero negativo y el {zeroazero/total_zero:.2%} siguió un 0 ")
+print(f"El total de la información es de:{len(Step2_Data['Slope'])}")
 print(plusaplus, negaplus, zeroaplus, plusaneg, neganeg, zeroaneg, plusazero, negazero, zeroazero)
 
 
