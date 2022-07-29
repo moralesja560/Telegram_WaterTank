@@ -2,8 +2,6 @@
 #developed by Ing. Jorge Morales, MBA.
 #Control and Automation Engineering Department
 
-from asyncio.proactor_events import _ProactorBaseWritePipeTransport
-from math import trunc
 import os
 import sys
 import subprocess
@@ -46,6 +44,9 @@ def My_Documents(location):
 #---------------------Telegram messaging services---------------------------------------#
 
 def send_message(user_id, text,token):
+
+
+
 	global json_respuesta
 	url = f"https://api.telegram.org/{token}/sendMessage?chat_id={user_id}&text={text}"
 	#resp = requests.get(url)
