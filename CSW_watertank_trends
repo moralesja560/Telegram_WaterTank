@@ -2,10 +2,10 @@ import datetime
 import subprocess
 import os
 import sys
+import pandas as pd
 import time
 
 
-x = datetime.datetime(2022, 9, 1)
 
 def resource_path(relative_path):
     """ Get absolute path to resource, works for dev and for PyInstaller """
@@ -25,7 +25,8 @@ def My_Documents(location):
 	temp_docs = buf.value
 	return temp_docs
 
-
+x = datetime.datetime(2022, 9, 28)
+mis_docs = My_Documents(5)
 
 
 def decode(hst_name):
@@ -34,15 +35,12 @@ def decode(hst_name):
 	time.sleep(2)
 
 
-mis_docs = My_Documents(5)
 
-
-for  i in range(0,28):
+for  i in range(0,1):
 	#HST name structure:
 	d1 =x.strftime("%d")
 	m1 = x.strftime("%m")
 	a1 = x.strftime("%y")
-	hst_name = f"05{a1}{m1}{d1}.hst"
-	print(hst_name)
-	decode(hst_name)
+	txt_name = f"05{a1}{m1}{d1}.hst"
+	decode(txt_name)
 	x = x + datetime.timedelta(days=1)
